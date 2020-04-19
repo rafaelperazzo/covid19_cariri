@@ -1,0 +1,612 @@
+{% extends "BASE_RELATORIO.html" %}
+
+{% block title %}
+CORONAVÍRUS - CARIRI
+{% endblock %}
+
+{% block header %}
+<center>
+<div class="ui small images">
+  <img src="{{ url_for('static', filename='corona.jpg')}}">
+  <img src="{{ url_for('static', filename='ufca.png')}}">
+</div>
+</center>
+<center><h1>MONITORAMENTO DO COVID19 NA REGIÃO DO CARIRI</h1></center>
+
+<h4 class="ui horizontal divider header">
+<i class="chart bar icon"></i>
+  Informações detalhadas: <a href="https://app.powerbi.com/view?r=eyJrIjoiYWYzMDRkZjctNzgzNy00NDY2LTk4YjMtNWRkMTIzYzA0MTFjIiwidCI6IjMyMTEyODk1LTEwNzItNDFiZS04MjVjLWExNzlhNmYyMzFiNiJ9">Painel PowerBI</a>
+</h4>
+
+<div class="ui message">
+  <div class="header">
+    Atualizações
+  </div>
+  <p>Os dados são atualizados automaticamente as 10:40, 17:40 e 23:40, diariamente, com base nos dados divulgados no IntegraSUS. </p>
+</div>
+
+<div class="ui mini horizontal statistic">
+  <div class="label">
+    Última atualização:
+  </div>
+  <div class="label">
+    <a class="ui green label">{{atualizacao}}</a>
+  </div>
+
+</div>
+<div class="ui divider"></div>
+{% endblock %}
+
+{% block content %}
+
+
+<div class="ui three column doubling stackable grid container">
+  <div class="column">
+
+    <div class="ui card">
+      <div class="content">
+        <div class="header">Casos Confirmados</div>
+      </div>
+      <div class="content">
+        <div class="ui statistic">
+
+            <div class="label">
+              Total
+            </div>
+            <div class="value">
+              {{dados[0]}}
+            </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="column">
+    <div class="ui card">
+      <div class="content">
+        <div class="header">Casos em análise</div>
+      </div>
+      <div class="content">
+        <div class="ui statistic">
+            <div class="label">
+              Total
+            </div>
+            <div class="value">
+              {{dados[1]}}
+            </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="column">
+    <div class="ui card">
+      <div class="content">
+        <div class="header">Óbitos</div>
+      </div>
+      <div class="content">
+        <div class="ui statistic">
+            <div class="label">
+              Total
+            </div>
+            <div class="value">
+              {{dados[2]}}
+            </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<div class="ui three column doubling stackable grid container">
+  <div class="column">
+
+    <div class="ui card">
+      <div class="content">
+        <div class="header">Exames realizados</div>
+      </div>
+      <div class="content">
+        <div class="ui statistic">
+
+            <div class="label">
+              Total
+            </div>
+            <div class="value">
+              {{agrupamentos[4]}}
+            </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="column">
+    <div class="ui card">
+      <div class="content">
+        <div class="header">Exames negativos</div>
+      </div>
+      <div class="content">
+        <div class="ui statistic">
+            <div class="label">
+              Total
+            </div>
+            <div class="value">
+              {{agrupamentos[5]}}
+            </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<div class="ui horizontal segments">
+
+  <div class="ui attached segment">
+      <h2 class="ui header">Mapa dos casos</h2><br>
+      <div id="mapid" style="height: 250px;"></div><br>
+      <div class="ui statistic">
+          <div class="label">
+            Cidades com confirmação
+          </div>
+          <div class="value">
+            {{total_confirmadas}}
+          </div>
+      </div><br>
+  </div>
+  <div class="ui attached segment">
+    <h2 class="ui header">Cidades com confirmação</h2><br>
+
+    {{cidades_confirmadas|safe}}
+  </div>
+</div>
+
+<div class="ui segment">
+    <h2 class="ui header">Casos acumulados</h2><br>
+    <div class="chart-container" style="position: relative; height:45vh; width:100%">
+          <canvas id="acumulados" width="80" height="45"></canvas>
+          <script>
+            new Chart(document.getElementById("acumulados"), {
+                type: 'line',
+                data: {
+                  labels: {{acumulados[0]|safe}},
+                  datasets: [{
+                    label: "Confirmados",
+                    backgroundColor: "#336600",
+                    borderColor: "#336600",
+                    fill: false,
+                    data: {{acumulados[1]|safe}}
+                  },
+                  /*{
+                    label: "Suspeitos",
+                    backgroundColor: "#CCCC00",
+                    borderColor: "#CCCC00",
+                    fill: false,
+                    data: {{acumulados[2]|safe}}
+                  },*/
+                  {
+                    label: "Óbitos",
+                    backgroundColor: "#FF0000",
+                    borderColor: "#FF0000",
+                    fill: false,
+                    data: {{acumulados[3]|safe}}
+                  }
+
+                  ]
+                },
+
+                options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  title: {
+                    display: true,
+                    text: ''
+                  },
+                  ticks: {
+                    min: 0,
+                    max: 10
+                  },
+                  scales: {
+                    yAxes : [{
+                        ticks : {
+                            min : 0,
+                            suggestedMax: 10
+                        }
+                    }]
+                  }
+                }
+            });
+          </script>
+    </div>
+</div>
+
+<div class="ui segment">
+    <h2 class="ui header">Casos suspeitos</h2><br>
+    <div class="chart-container" style="position: relative; height:45vh; width:100%">
+          <canvas id="suspeitos" width="80" height="45"></canvas>
+          <script>
+            new Chart(document.getElementById("suspeitos"), {
+                type: 'line',
+                data: {
+                  labels: {{acumulados[0]|safe}},
+                  datasets: [{
+                    label: "Suspeitos",
+                    backgroundColor: "#CCCC00",
+                    borderColor: "#CCCC00",
+                    fill: false,
+                    data: {{acumulados[2]|safe}}
+                  }
+                  ]
+                },
+
+                options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  title: {
+                    display: true,
+                    text: ''
+                  },
+                  ticks: {
+                    min: 0,
+                    max: 10
+                  },
+                  scales: {
+                    yAxes : [{
+                        ticks : {
+                            min : 0,
+                            suggestedMax: 10
+                        }
+                    }]
+                  }
+                }
+            });
+          </script>
+    </div>
+</div>
+
+<div class="ui horizontal segments">
+
+  <div class="ui segment">
+    <h2 class="ui header">Casos confirmados por idade</h2><br>
+    <div class="chart-container" style="position: relative; height:45vh; width:50%">
+          <canvas id="confirmadosIdade" width="80" height="45"></canvas>
+          <script>
+            new Chart(document.getElementById("confirmadosIdade"), {
+                type: 'horizontalBar',
+                data: {
+                  labels: {{agrupamentos[6]|safe}},
+                  datasets: [{
+                    label: "Quantidade",
+                    backgroundColor: {{cores|safe}},
+                    data: {{agrupamentos[7]|safe}}
+                  }
+                  ]
+                },
+
+                options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  title: {
+                    display: true,
+                    text: ''
+                  },
+                  ticks: {
+                    min: 0,
+                    max: 10
+                  },
+                  scales: {
+                    yAxes : [{
+                        ticks : {
+                            min : 0,
+                            suggestedMax: 10
+                        }
+                    }]
+                  }
+                }
+            });
+          </script>
+    </div>
+  </div>
+
+  <div class="ui segment">
+    <h2 class="ui header">Casos em análise por idade</h2><br>
+    <div class="chart-container" style="position: relative; height:45vh; width:50%">
+          <canvas id="analiseIdade" width="80" height="45"></canvas>
+          <script>
+            new Chart(document.getElementById("analiseIdade"), {
+                type: 'horizontalBar',
+                data: {
+                  labels: {{agrupamentos[6]|safe}},
+                  datasets: [{
+                    label: "Quantidade",
+                    backgroundColor: {{cores|safe}},
+                    data: {{agrupamentos[8]|safe}}
+                  }
+                  ]
+                },
+
+                options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  title: {
+                    display: true,
+                    text: ''
+                  },
+                  ticks: {
+                    min: 0,
+                    max: 10
+                  },
+                  scales: {
+                    yAxes : [{
+                        ticks : {
+                            min : 0,
+                            suggestedMax: 10
+                        }
+                    }]
+                  }
+                }
+            });
+          </script>
+    </div>
+  </div>
+
+</div>
+
+<div class="ui horizontal segments">
+  <div class="ui segment">
+    <h2 class="ui header">Casos confirmados por sexo</h2><br>
+    <div class="chart-container" style="position: relative; height:45vh; width:50%">
+          <canvas id="confirmados_sexo" width="80" height="45"></canvas>
+          <script>
+            new Chart(document.getElementById("confirmados_sexo"), {
+                type: 'pie',
+                data: {
+                  labels: {{agrupamentos[3]|safe}},
+                  datasets: [{
+                    label: "Quantidade",
+                    backgroundColor: ["#8e5ea2","#3e95cd","#3cba9f","#e8c3b9","#c45850"],
+                    data: {{agrupamentos[2]|safe}}
+                  }
+                  ]
+                },
+
+                options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  title: {
+                    display: true,
+                    text: 'Casos Confirmados por sexo'
+                  }
+
+                }
+            });
+          </script>
+    </div>
+  </div>
+  <div class="ui segment">
+    <h2 class="ui header">Resultados dos exames realizados</h2><br>
+    <div class="chart-container" style="position: relative; height:45vh; width:50%">
+          <canvas id="exames" width="80" height="45"></canvas>
+          <script>
+            new Chart(document.getElementById("exames"), {
+                type: 'pie',
+                data: {
+                  labels: ['Positivo','Negativo','Em Análise'],
+                  datasets: [{
+                    label: "Quantidade",
+                    backgroundColor: ["#FF0000","#336600","#CCCC00","#e8c3b9","#c45850"],
+                    data: [{{dados[0]}},{{agrupamentos[5]}},{{dados[1]}}]
+                  }
+                  ]
+                },
+
+                options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  title: {
+                    display: true,
+                    text: 'Situação dos exames realizados'
+                  }
+
+                }
+            });
+          </script>
+    </div>
+  </div>
+
+</div>
+
+
+<div class="ui segment">
+  <h2 class="ui header">Casos por cidade</h2>
+  <center> {{porCidade|safe}} </center>
+</div>
+
+<div class="ui horizontal segments">
+
+  <div class="ui segment">
+    <h2 class="ui header">Casos confirmados por cidade e sexo</h2>
+    <center>{{agrupamentos[0]|safe}}</center>
+  </div>
+  <div class="ui segment">
+    <h2 class="ui header">Casos confirmados por cidade e bairro</h2>
+    <center>{{agrupamentos[1]|safe}}</center>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+{{ super() }}
+<script>
+  cleanTables();
+</script>
+
+<script>
+  var mymap = L.map('mapid').setView([-7.225814, -39.311421], 7);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+}).addTo(mymap);
+    {% for i in range(0,mapa_cidade|length,1) %}
+        var circle = L.circle([{{mapa_gps[i]|safe}}], {
+          color: '#FF0000',
+          fillColor: '#FF0000',
+          fillOpacity: 0.5,
+          radius: 3000
+        }).addTo(mymap);
+        circle.bindPopup("{{mapa_cidade[i]}}<br>Confirmados: {{mapa_confirmados[i]}}");
+    {% endfor %}
+</script>
+
+<script>
+  var filtersConfig = {
+          base_path: 'https://unpkg.com/tablefilter@latest/dist/tablefilter/',
+
+        col_widths: ['250px', '120px', '120px', '120px'],
+        /*grid_layout: {
+          width: '100%',
+          height: '65%'
+      },*/
+          col_0: 'checklist',
+          alternate_rows: true,
+          responsive: true,
+          popup_filters: true,
+          highlight_keywords: true,
+          rows_counter: {
+            text: 'Cidades: '
+          },
+          btn_reset: {
+            text: 'Limpar'
+          },
+          status_bar: true,
+          loader: true,
+          col_types: [
+            'string',
+            'number',
+            'number',
+            'number'
+          ],
+          extensions: [{ name: 'sort' }]
+      };
+  var tf = new TableFilter('tab1', filtersConfig);
+  tf.init();
+</script>
+
+<script>
+  var filtersConfig = {
+          base_path: 'https://unpkg.com/tablefilter@latest/dist/tablefilter/',
+          col_0: 'checklist',
+          alternate_rows: true,
+          responsive: true,
+          popup_filters: true,
+          highlight_keywords: true,
+          col_widths: ['160px', '110px', '110px', '110px'],
+          /*grid_layout: {
+            width: '100%',
+            height: '65%'
+          },*/
+          rows_counter: {
+            text: 'Cidades: '
+          },
+          btn_reset: {
+            text: 'Limpar'
+          },
+          status_bar: true,
+          loader: true,
+          col_types: [
+            'string',
+            'number',
+            'number',
+            'number'
+          ],
+          extensions: [{ name: 'sort' }]
+      };
+  var tf = new TableFilter('tab0', filtersConfig);
+  tf.init();
+</script>
+
+<script language="javascript">
+setInterval(function(){
+   window.location.reload(1);
+}, 1800000);
+</script>
+
+{% endblock %}
+
+
+{% block footer %}
+<div class="ui divider"></div>
+<h4 class="ui horizontal divider header">
+<i class="ambulance icon"></i>
+  Fonte: <a href="https://indicadores.integrasus.saude.ce.gov.br/indicadores/indicadores-coronavirus/coronavirus-ceara">IntegraSUS</a>
+</h4>
+
+<h4 class="ui horizontal divider header">
+ <i class="github alternate icon"></i>
+  Repositório online: <a href="https://github.com/rafaelperazzo/covid19">Github</a>
+</h4>
+
+<center>
+<div class="ui icon buttons">
+    <button onclick='window.open("https://apps.yoko.pet/covid_csv/todos.ceara.hoje.csv");' class="ui basic button">
+      <i class="download icon"></i>
+    CSV - Ceará
+
+    </button>
+    <button id="create_xlsx" onclick='window.open("https://apps.yoko.pet/covid_csv/todos.cariri.hoje.csv");' class="ui basic button">
+    <i class="database icon"></i>
+    CSV - Cariri
+    </button>
+</div>
+</center>
+
+<center>
+  <br>
+<h4 class="ui header">Exportar tabelas desta página </h4>
+<div class="ui icon buttons">
+    <button onclick="exportTableToCSV('exportar.csv');" class="ui basic button">
+      <i class="download icon"></i>
+    CSV
+
+    </button>
+    <button id="create_xlsx" onclick="converter('xlsx');" class="ui basic button">
+    <i class="database icon"></i>
+    XLSX
+    </button>
+    <button id="create_ods" onclick="converter('ods');" class="ui basic button">
+    <i class="database icon"></i>
+    ODS
+    </button>
+
+</div>
+</center>
+<div class="ui divider"></div>
+<center>
+<br><i class="user icon"></i>Responsável: Prof. Rafael Perazzo
+<br><i class="phone icon"></i>Contatos: (88)3221-9566 - <i class="mail icon"></i> rafael.mota at ufca.edu.br</center>
+</center>
+<div class="ui divider"></div>
+<div class="ui tiny images">
+    <center>
+
+        <img class="ui image" src="{{ url_for('static', filename='linux.png')}}">
+        <img class="ui image" src="{{ url_for('static', filename='debian.png')}}">
+        <img class="ui image" src="{{ url_for('static', filename='apache.png')}}">
+        <img class="ui image" src="{{ url_for('static', filename='python.png')}}">
+        <img class="ui image" src="{{ url_for('static', filename='flask.png')}}">
+        <img class="ui image" src="{{ url_for('static', filename='javascript.png')}}">
+        <img class="ui image" src="{{ url_for('static', filename='semantic.png')}}">
+        <img class="ui image" src="{{ url_for('static', filename='selenium.png')}}">
+        <img class="ui image" src="{{ url_for('static', filename='pandas.png')}}">
+  </center>
+</div>
+{% endblock %}

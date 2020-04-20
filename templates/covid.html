@@ -5,6 +5,16 @@ CORONAVÍRUS - CARIRI
 {% endblock %}
 
 {% block header %}
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-164010444-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-164010444-1');
+</script>
+
 <center>
 <div class="ui small images">
   <img src="{{ url_for('static', filename='corona.jpg')}}">
@@ -279,7 +289,7 @@ CORONAVÍRUS - CARIRI
           <canvas id="confirmadosIdade" width="80" height="45"></canvas>
           <script>
             new Chart(document.getElementById("confirmadosIdade"), {
-                type: 'horizontalBar',
+                type: 'bar',
                 data: {
                   labels: {{agrupamentos[6]|safe}},
                   datasets: [{
@@ -321,7 +331,7 @@ CORONAVÍRUS - CARIRI
           <canvas id="analiseIdade" width="80" height="45"></canvas>
           <script>
             new Chart(document.getElementById("analiseIdade"), {
-                type: 'horizontalBar',
+                type: 'bar',
                 data: {
                   labels: {{agrupamentos[6]|safe}},
                   datasets: [{
@@ -612,6 +622,10 @@ setInterval(function(){
         <img class="ui image" src="{{ url_for('static', filename='semantic.png')}}">
         <img class="ui image" src="{{ url_for('static', filename='selenium.png')}}">
         <img class="ui image" src="{{ url_for('static', filename='pandas.png')}}">
+        <img class="ui image" src="{{ url_for('static', filename='jupyter.png')}}">
+        <img class="ui image" src="{{ url_for('static', filename='osm.png')}}">
+        <img class="ui image" src="{{ url_for('static', filename='leaflet.png')}}">
+        <img class="ui image" src="{{ url_for('static', filename='chartjs.svg')}}">
   </center>
 </div>
 {% endblock %}

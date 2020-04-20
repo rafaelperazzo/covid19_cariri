@@ -142,7 +142,6 @@ def dadosCovid():
     faixas = porIdadePositivo.index.tolist()
     for i in range(0,len(faixas),1):
         faixas[i] = str(faixas[i]).replace('(','[')
-        faixas[i] = faixas[i].replace(']','[')
     intervaloIdades = faixas
     dadosPositivoIdade = porIdadePositivo['Quantidade'].tolist()
     dadosAnaliseIdade = porIdadeAnalise['Quantidade'].tolist()

@@ -28,6 +28,7 @@ import tracemalloc
 import semantic_version
 from flask_wkhtmltopdf import Wkhtmltopdf
 import os
+import requests
 
 WORKING_DIR='/dados/flask/covid/'
 COVID_DIR = '/dados/flask/cimai/covid/'
@@ -38,7 +39,14 @@ logging.debug("INICIANDO LOG")
 app = Flask(__name__)
 auth = HTTPBasicAuth()
 
-versao = semantic_version.Version('1.0.0')
+versao = semantic_version.Version('1.1.0')
+
+def getSenha(arquivo):
+    f = open(arquivo,'r')
+    senha = f.read()
+    f.close()
+    return(str(senha))
+
 def hash(str):
     result = hashlib.sha256(str.encode())
     return(result.hexdigest())
@@ -96,6 +104,7 @@ def dadosCovid():
     casos_cariri['sexoPaciente'].replace(['Masculino'],['MASCULINO'],inplace=True)
     casos_cariri['sexoPaciente'].replace(['0'],['FEMININO'],inplace=True)
     casos_cariri['bairroPaciente'].replace([0],['NAO INFORMADO'],inplace=True)
+    casos_cariri.drop_duplicates(subset='codigoPaciente',inplace=True,keep='last')
     #POR SEXO E RESULTADO POSITIVO
     porSexo = casos_cariri[casos_cariri['resultadoFinalExame']=='Positivo'].groupby(['municipioPaciente','sexoPaciente'])
     tabelaPositivoPorSexo = porSexo['codigoPaciente'].count().to_frame()
@@ -106,6 +115,29 @@ def dadosCovid():
     tabelaPositivoPorBairro = porBairro['codigoPaciente'].count().to_frame()
     tabelaPositivoPorBairro.columns = ['Quantidade']
     tabelaPositivoPorBairro.index.names = ['Cidade','Bairro']
+
+    bairros = []
+    for i in range(0,len(tabelaPositivoPorBairro.index),1):
+        linha = list(tabelaPositivoPorBairro.index[i])
+        if linha[1]=='NAO INFORMADO' or linha[1]=='ZONA RURAL':
+            linha[1] = 'CENTRO'
+        estado = 'CEARA'
+        senha = getSenha(WORKING_DIR + 'passwd.nominatim').rstrip()
+
+        consulta = linha[0] + ' ' + estado + ' ' + linha[1]
+        requisicao = json.loads(requests.get("https://apps.yoko.pet/osm/search?q='" + consulta + "'&format=json", auth=('nominatim', senha)).text)
+        try:
+            latitude = requisicao[0]['lat']
+            longitude = requisicao[0]['lon']
+            gps = str(latitude) + ',' + str(longitude)
+        except IndexError:
+            requisicao = json.loads(requests.get("https://apps.yoko.pet/osm/search?q='" + linha[0] + ' ' + estado + "'&format=json", auth=('nominatim', 'autoridade')).text)
+            latitude = requisicao[0]['lat']
+            longitude = requisicao[0]['lon']
+            gps = str(latitude) + ',' + str(longitude)
+        linha.append(gps)
+        bairros.append(linha)
+
     #POR SEXO E RESULTADO NEGATIVO
     porSexo = casos_cariri[casos_cariri['resultadoFinalExame']=='Negativo'].groupby(['municipioPaciente','sexoPaciente'])
     tabelaNegativoPorSexo = porSexo['codigoPaciente'].count().to_frame()
@@ -117,6 +149,7 @@ def dadosCovid():
     tabelaAnalisePorSexo.columns = ['Quantidade']
     tabelaAnalisePorSexo.index.names = ['Cidade','Bairro']
     #TOTAL DE CONFIRMADOS POR SEXO
+    #casos_cariri.drop_duplicates(subset='codigoPaciente',inplace=True,keep='last')
     porSexo = casos_cariri[casos_cariri['resultadoFinalExame']=='Positivo'].groupby(['sexoPaciente'])
     listaSexos = porSexo['codigoPaciente'].count().tolist()
     listaSexosTotais = porSexo['codigoPaciente'].count().index.tolist()
@@ -126,9 +159,10 @@ def dadosCovid():
     totalNegativos = casos_cariri[casos_cariri['resultadoFinalExame']=='Negativo'].shape[0]
 
     #Por Idade
-    idades = [0,2,5,10,16,20,40,60,80,100]
+    #idades = [0,2,5,10,16,20,40,60,80,100]
+    idades = [0,5,20,40,60,120]
     casos_positivos = casos_cariri[casos_cariri['resultadoFinalExame']=='Positivo']
-    gruposPositivosIdades = casos_positivos.groupby((pd.cut(casos_positivos['idadePaciente'],idades)))
+    gruposPositivosIdades = casos_positivos.groupby((pd.cut(casos_positivos['idadePaciente'],idades,right=False)))
     porIdadePositivo = gruposPositivosIdades['codigoPaciente'].count().to_frame()
     porIdadePositivo.index.name = 'Faixa Etária'
     porIdadePositivo.columns = ['Quantidade']
@@ -148,20 +182,30 @@ def dadosCovid():
 
     agrupamentos =[tabelaPositivoPorSexo.to_html(),tabelaPositivoPorBairro.to_html(),listaSexos,listaSexosTotais,totalExames,totalNegativos,intervaloIdades,dadosPositivoIdade,dadosAnaliseIdade]
 
-    return(dia,evolucao,porCidade,evolucaoTotal,evolucaoDataset,cidades_confirmadas,agrupamentos)
+    return(dia,evolucao,porCidade,evolucaoTotal,evolucaoDataset,cidades_confirmadas,agrupamentos,bairros)
 
 @app.route("/")
 def covid():
 
-    dados,evolucao,porCidade,evolucaoTotal,evolucaoDataSet,cidades_confirmadas,agrupamentos = dadosCovid()
+    dados,evolucao,porCidade,evolucaoTotal,evolucaoDataSet,cidades_confirmadas,agrupamentos,bairros = dadosCovid()
+    total_populacao = porCidade['populacao'].astype(int).sum()
+    col_populacao = porCidade['populacao'].astype(int)
+    col_confirmados = porCidade['confirmado'].astype(int)
     porCidade = porCidade[['cidade','confirmado','suspeitos','obitos']]
+    porCidade['incidencia'] = ((col_confirmados/col_populacao)*100000).round(2)
+    cidades_confirmadas['incidencia'] = ((cidades_confirmadas['confirmado'].astype(int)/cidades_confirmadas['populacao'].astype(int))*100000).round(2)
     mapa_cidade = cidades_confirmadas['cidade'].tolist()
     mapa_confirmados = cidades_confirmadas['confirmado'].tolist()
     mapa_gps = cidades_confirmadas['gps'].tolist()
+    mapa_incidencia = (cidades_confirmadas['incidencia'].astype(float)*1000).tolist()
     arquivo = open(COVID_DIR + 'time.txt','r')
     conteudo = str(arquivo.read())
+    arquivo.close()
+    total_confirmados = porCidade['confirmado'].astype(int).sum()
+    porCemMil = (total_confirmados/total_populacao)*100000
+    porCemMil = '{:.2f}'.format(porCemMil)
     cores = getCores(len(agrupamentos[6]))
-    return(render_template('covid.html',cores=cores,dados=dados,evolucao=evolucao.to_html(),porCidade=porCidade.to_html(index=False,index_names=False),atualizacao=conteudo,acumulados=evolucaoDataSet,cidades_confirmadas=cidades_confirmadas[['cidade','confirmado','suspeitos','obitos']].to_html(index=False),total_confirmadas=cidades_confirmadas.shape[0],mapa_cidade=mapa_cidade,mapa_confirmados=mapa_confirmados,mapa_gps=mapa_gps,agrupamentos=agrupamentos))
+    return(render_template('covid.html',bairros=bairros,porCemMil=porCemMil,cores=cores,dados=dados,evolucao=evolucao.to_html(),porCidade=porCidade.to_html(index=False,index_names=False),atualizacao=conteudo,acumulados=evolucaoDataSet,cidades_confirmadas=cidades_confirmadas[['cidade','confirmado','suspeitos','obitos','incidencia']].to_html(index=False),total_confirmadas=cidades_confirmadas.shape[0],mapa_cidade=mapa_cidade,mapa_confirmados=mapa_confirmados,mapa_gps=mapa_gps,mapa_incidencia=mapa_incidencia,agrupamentos=agrupamentos))
 
 @app.route("/atualizaDatasets")
 def atualizaDatasets():

@@ -127,7 +127,8 @@ CORONAVÍRUS - CARIRI
               Total
             </div>
             <div class="value">
-              {{agrupamentos[4]}}
+              <!--{{agrupamentos[4]}}-->
+              {{dados[0]|int+agrupamentos[5]|int+dados[1]|int}}
             </div>
 
         </div>
@@ -155,6 +156,25 @@ CORONAVÍRUS - CARIRI
     </div>
   </div>
 
+  <div class="column">
+    <div class="ui card">
+      <div class="content">
+        <div class="header">por 100.000 habitantes</div>
+      </div>
+      <div class="content">
+        <div class="ui statistic">
+            <div class="label">
+              Taxa
+            </div>
+            <div class="value">
+              {{porCemMil}}
+            </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
 </div>
 
 <div class="ui horizontal segments">
@@ -172,9 +192,10 @@ CORONAVÍRUS - CARIRI
       </div><br>
   </div>
   <div class="ui attached segment">
-    <h2 class="ui header">Cidades com confirmação</h2><br>
-
+    <h2 class="ui header">Cidades com confirmação</h2>
+    <h5 class="ui grey header">Incidência: Taxa por cem mil habitantes*</h5>
     {{cidades_confirmadas|safe}}
+    <h5 class="ui grey header">*<i>População estimada em 2019 pelo IBGE</i></h5>
   </div>
 </div>
 
@@ -436,6 +457,7 @@ CORONAVÍRUS - CARIRI
 
 <div class="ui segment">
   <h2 class="ui header">Casos por cidade</h2>
+  <h5 class="ui grey header">Incidência: Taxa por cem mil habitantes</h5>
   <center> {{porCidade|safe}} </center>
 </div>
 
@@ -450,6 +472,10 @@ CORONAVÍRUS - CARIRI
     <center>{{agrupamentos[1]|safe}}</center>
   </div>
 </div>
+
+<div class="ui divider"></div>
+<h2 class="ui header">Bairros com confirmações</h2>
+<div id="mapid2" style="height: 400px;"></div><br>
 
 {% endblock %}
 
@@ -471,9 +497,27 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           color: '#FF0000',
           fillColor: '#FF0000',
           fillOpacity: 0.5,
-          radius: 3000
+          radius: {{mapa_incidencia[i]}}
         }).addTo(mymap);
         circle.bindPopup("{{mapa_cidade[i]}}<br>Confirmados: {{mapa_confirmados[i]}}");
+    {% endfor %}
+</script>
+
+<script>
+  //MAPA DOS BAIRROS
+  var mymap = L.map('mapid2').setView([-7.225814, -39.311421], 9);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+}).addTo(mymap);
+    {% for i in range(0,bairros|length,1) %}
+        var circle = L.circle([{{bairros[i][2]|safe}}], {
+          color: '#FF0000',
+          fillColor: '#FF0000',
+          fillOpacity: 0.5,
+          radius: 1000
+        }).addTo(mymap);
+        circle.bindPopup("{{bairros[i][0]}}<BR>{{bairros[i][1]}}");
     {% endfor %}
 </script>
 
@@ -501,6 +545,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           loader: true,
           col_types: [
             'string',
+            'number',
             'number',
             'number',
             'number'
@@ -534,6 +579,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           loader: true,
           col_types: [
             'string',
+            'number',
             'number',
             'number',
             'number'

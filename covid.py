@@ -80,11 +80,7 @@ def dadosCovid():
     agrupadosEvolucao = df_cariri.groupby(['data'])
     evolucaoTotal = agrupadosEvolucao['confirmado','suspeitos','obitos'].sum()
     cidades_confirmadas = porCidade[porCidade['confirmado']>0]
-    '''
-    atualizacao = evolucaoTotal.index[-1]
-    date_o = datetime.strptime(atualizacao,'%Y-%m-%d')
-    atualizacao = date_o.strftime("%d/%m/%Y")
-    '''
+
     datas = evolucaoTotal.index.to_list()
     confirmados = evolucaoTotal['confirmado'].to_list()
     suspeitos = evolucaoTotal['suspeitos'].to_list()
@@ -104,6 +100,7 @@ def dadosCovid():
     casos_cariri['sexoPaciente'].replace(['Masculino'],['MASCULINO'],inplace=True)
     casos_cariri['sexoPaciente'].replace(['0'],['FEMININO'],inplace=True)
     casos_cariri['bairroPaciente'].replace([0],['NAO INFORMADO'],inplace=True)
+    casos_cariri['bairroPaciente'].replace(['VILA FATIMA'],['FATIMA'],inplace=True)
     casos_cariri.drop_duplicates(subset='codigoPaciente',inplace=True,keep='last')
     #POR SEXO E RESULTADO POSITIVO
     porSexo = casos_cariri[casos_cariri['resultadoFinalExame']=='Positivo'].groupby(['municipioPaciente','sexoPaciente'])
@@ -121,11 +118,15 @@ def dadosCovid():
         linha = list(tabelaPositivoPorBairro.index[i])
         if linha[1]=='NAO INFORMADO' or linha[1]=='ZONA RURAL':
             linha[1] = 'CENTRO'
-        estado = 'CEARA'
-        senha = getSenha(WORKING_DIR + 'passwd.nominatim').rstrip()
 
-        consulta = linha[0] + ' ' + estado + ' ' + linha[1]
-        requisicao = json.loads(requests.get("https://apps.yoko.pet/osm/search?q='" + consulta + "'&format=json", auth=('nominatim', senha)).text)
+        estado = 'CEARA'
+        #senha = getSenha(WORKING_DIR + 'passwd.nominatim').rstrip()
+        if linha[0]=='ARARIPE':
+            consulta = linha[0] + ' ' + estado
+        else:
+            consulta = linha[0] + ' ' + estado + ' ' + linha[1]
+        #requisicao = json.loads(requests.get("https://apps.yoko.pet/osm/search?q='" + consulta + "'&format=json", auth=('nominatim', senha)).text)
+        requisicao = json.loads(requests.get("https://apps.yoko.pet/osm/search?q='" + consulta + "'&format=json").text)
         try:
             latitude = requisicao[0]['lat']
             longitude = requisicao[0]['lon']
@@ -186,7 +187,7 @@ def dadosCovid():
 
 @app.route("/")
 def covid():
-
+    #return('Em manutencao... Volta em alguns minutos...')
     dados,evolucao,porCidade,evolucaoTotal,evolucaoDataSet,cidades_confirmadas,agrupamentos,bairros = dadosCovid()
     total_populacao = porCidade['populacao'].astype(int).sum()
     col_populacao = porCidade['populacao'].astype(int)

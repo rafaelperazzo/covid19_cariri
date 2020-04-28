@@ -185,7 +185,7 @@ def dadosCovid():
 
     return(dia,evolucao,porCidade,evolucaoTotal,evolucaoDataset,cidades_confirmadas,agrupamentos,bairros)
 
-@app.route("/")
+@app.route("/", methods=['GET', 'POST'])
 def covid():
     #return('Em manutencao... Volta em alguns minutos...')
     dados,evolucao,porCidade,evolucaoTotal,evolucaoDataSet,cidades_confirmadas,agrupamentos,bairros = dadosCovid()
@@ -206,6 +206,15 @@ def covid():
     porCemMil = (total_confirmados/total_populacao)*100000
     porCemMil = '{:.2f}'.format(porCemMil)
     cores = getCores(len(agrupamentos[6]))
+    # *******
+    if request.method == "GET":
+        if 'q' in request.args:
+            q = int(request.args.get('q'))
+            if (q==1):
+                return(render_template('mapa.cidades.html',mapa_cidade=mapa_cidade,mapa_confirmados=mapa_confirmados,mapa_gps=mapa_gps,mapa_incidencia=mapa_incidencia))            
+            else:
+                return(render_template('mapa.bairros.html',bairros=bairros))            
+    #*****
     return(render_template('covid.html',bairros=bairros,porCemMil=porCemMil,cores=cores,dados=dados,evolucao=evolucao.to_html(),porCidade=porCidade.to_html(index=False,index_names=False),atualizacao=conteudo,acumulados=evolucaoDataSet,cidades_confirmadas=cidades_confirmadas[['cidade','confirmado','suspeitos','obitos','incidencia']].to_html(index=False),total_confirmadas=cidades_confirmadas.shape[0],mapa_cidade=mapa_cidade,mapa_confirmados=mapa_confirmados,mapa_gps=mapa_gps,mapa_incidencia=mapa_incidencia,agrupamentos=agrupamentos))
 
 @app.route("/atualizaDatasets")

@@ -1,0 +1,51 @@
+<html>
+
+<head>
+  <title>MAPA DAS CIDADES</title>
+  <meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+  integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+  crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+   integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+   crossorigin=""></script>
+  <style>
+		body {
+    padding: 0;
+    margin: 0;
+    }
+    html, body, #map {
+        height: 100%;
+        width: 100vw;
+    }
+  </style>
+  
+  <style>body { padding: 0; margin: 0; } #map { height: 100%; width: 100vw; }</style>
+</head>
+
+<body>
+  
+  <div id='map'></div>
+  <script>
+    var mymap = L.map('map').setView([-7.225814, -39.311421], 7);
+  
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(mymap);
+      {% for i in range(0,mapa_cidade|length,1) %}
+          var circle = L.circle([{{mapa_gps[i]|safe}}], {
+            color: '#FF0000',
+            fillColor: '#FF0000',
+            fillOpacity: 0.5,
+            radius: {{mapa_incidencia[i]}}
+          }).addTo(mymap);
+          circle.bindPopup("{{mapa_cidade[i]}}<br>Confirmados: {{mapa_confirmados[i]}}");
+      {% endfor %}
+  </script>
+  
+</body>
+
+</html>
+
+

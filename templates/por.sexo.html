@@ -1,0 +1,36 @@
+{% extends "MOBILE.html" %}
+
+{% block title %}
+Casos confirmados por sexo
+{% endblock %}
+
+{% block body %}  
+<div class="chart-container" style="position: relative; height:100%; width:100vw">
+        <canvas id="confirmados_sexo" width="100vw" height="100%"></canvas>
+        <script>
+          new Chart(document.getElementById("confirmados_sexo"), {
+              type: 'pie',
+              data: {
+                labels: {{agrupamentos[3]|safe}},
+                datasets: [{
+                  label: "Quantidade",
+                  backgroundColor: ["#8e5ea2","#3e95cd","#3cba9f","#e8c3b9","#c45850"],
+                  data: {{agrupamentos[2]|safe}}
+                }
+                ]
+              },
+
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                title: {
+                  display: true,
+                  text: 'Casos Confirmados por sexo'
+                }
+
+              }
+          });
+        </script>
+  </div>
+{% endblock %}
+

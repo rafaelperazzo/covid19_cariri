@@ -212,8 +212,14 @@ def covid():
             q = int(request.args.get('q'))
             if (q==1):
                 return(render_template('mapa.cidades.html',mapa_cidade=mapa_cidade,mapa_confirmados=mapa_confirmados,mapa_gps=mapa_gps,mapa_incidencia=mapa_incidencia))            
-            else:
+            elif (q==2):
                 return(render_template('mapa.bairros.html',bairros=bairros))            
+            elif (q==3):
+                return(render_template('por.sexo.html',agrupamentos=agrupamentos))
+            elif (q==4):
+                return(render_template('por.idade.html',agrupamentos=agrupamentos,cores=cores))
+            else:
+                return("Nao implementado...")            
     #*****
     return(render_template('covid.html',bairros=bairros,porCemMil=porCemMil,cores=cores,dados=dados,evolucao=evolucao.to_html(),porCidade=porCidade.to_html(index=False,index_names=False),atualizacao=conteudo,acumulados=evolucaoDataSet,cidades_confirmadas=cidades_confirmadas[['cidade','confirmado','suspeitos','obitos','incidencia']].to_html(index=False),total_confirmadas=cidades_confirmadas.shape[0],mapa_cidade=mapa_cidade,mapa_confirmados=mapa_confirmados,mapa_gps=mapa_gps,mapa_incidencia=mapa_incidencia,agrupamentos=agrupamentos))
 

@@ -1,32 +1,44 @@
 # -*- coding: utf-8 -*-
-#GPS: https://raw.githubusercontent.com/kelvins/Municipios-Brasileiros/master/csv/municipios.csv
+'''
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>
+'''
 from flask import Flask
 from flask import render_template
 from flask import request,url_for,send_file,send_from_directory,redirect,flash,Markup,Response,session
 from datetime import datetime
-import MySQLdb
-from werkzeug.utils import secure_filename
+#import MySQLdb
+#from werkzeug.utils import secure_filename
 import logging
 import sys
 import numpy as np
 import csv
 import pandas as pd
-from flask_mail import Mail
-from flask_mail import Message
+#from flask_mail import Mail
+#from flask_mail import Message
 import random
 import json
-import glob
+#import glob
 import warnings
 warnings.filterwarnings('ignore')
-import logging
-from sqlalchemy import *
-import pymysql
-from flask_httpauth import HTTPBasicAuth
+#from sqlalchemy import *
+#import pymysql
+#from flask_httpauth import HTTPBasicAuth
 import hashlib
 import time
-import tracemalloc
+#import tracemalloc
 import semantic_version
-from flask_wkhtmltopdf import Wkhtmltopdf
+#from flask_wkhtmltopdf import Wkhtmltopdf
 import os
 import requests
 
@@ -37,9 +49,9 @@ logging.basicConfig(filename=WORKING_DIR + 'app.log', filemode='w', format='%(as
 logging.debug("INICIANDO LOG")
 
 app = Flask(__name__)
-auth = HTTPBasicAuth()
+#auth = HTTPBasicAuth()
 
-versao = semantic_version.Version('1.1.0')
+versao = semantic_version.Version('1.2.0')
 
 def getSenha(arquivo):
     f = open(arquivo,'r')
@@ -218,6 +230,8 @@ def covid():
                 return(render_template('por.sexo.html',agrupamentos=agrupamentos))
             elif (q==4):
                 return(render_template('por.idade.html',agrupamentos=agrupamentos,cores=cores))
+            elif (q==5):
+                return(render_template('por.evolucao.html',acumulados=evolucaoDataSet))
             else:
                 return("Nao implementado...")            
     #*****

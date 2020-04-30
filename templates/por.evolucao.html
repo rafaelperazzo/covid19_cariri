@@ -1,0 +1,64 @@
+{% extends "MOBILE.html" %}
+
+{% block title %}
+Evolução dos casos confirmados ao longo do tempo
+{% endblock %}
+
+{% block body %}  
+<div class="chart-container" style="position: relative; height:80%; width:100vw">
+  <canvas id="acumulados" width="100vw" height="80%"></canvas>
+  <script>
+    new Chart(document.getElementById("acumulados"), {
+        type: 'line',
+        data: {
+          labels: {{acumulados[0]|safe}},
+          datasets: [{
+            label: "Confirmados",
+            backgroundColor: "#336600",
+            borderColor: "#336600",
+            fill: false,
+            data: {{acumulados[1]|safe}}
+          },
+          /*{
+            label: "Suspeitos",
+            backgroundColor: "#CCCC00",
+            borderColor: "#CCCC00",
+            fill: false,
+            data: {{acumulados[2]|safe}}
+          },*/
+          {
+            label: "Óbitos",
+            backgroundColor: "#FF0000",
+            borderColor: "#FF0000",
+            fill: false,
+            data: {{acumulados[3]|safe}}
+          }
+
+          ]
+        },
+
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          title: {
+            display: true,
+            text: 'Evolução dos casos ao longo do tempo'
+          },
+          ticks: {
+            min: 0,
+            max: 10
+          },
+          scales: {
+            yAxes : [{
+                ticks : {
+                    min : 0,
+                    suggestedMax: 10
+                }
+            }]
+          }
+        }
+    });
+  </script>
+</div>
+{% endblock %}
+

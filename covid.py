@@ -41,6 +41,7 @@ import semantic_version
 #from flask_wkhtmltopdf import Wkhtmltopdf
 import os
 import requests
+import sqlite3
 
 WORKING_DIR='/dados/flask/covid/'
 COVID_DIR = '/dados/flask/cimai/covid/'
@@ -210,7 +211,7 @@ def covid():
     mapa_cidade = cidades_confirmadas['cidade'].tolist()
     mapa_confirmados = cidades_confirmadas['confirmado'].tolist()
     mapa_gps = cidades_confirmadas['gps'].tolist()
-    mapa_incidencia = (cidades_confirmadas['incidencia'].astype(float)*1000).tolist()
+    mapa_incidencia = (cidades_confirmadas['incidencia'].astype(float)*50).tolist()
     arquivo = open(COVID_DIR + 'time.txt','r')
     conteudo = str(arquivo.read())
     arquivo.close()
@@ -248,5 +249,37 @@ def atualizaDatasets():
     df_ceara.to_csv('/dados/flask/cimai/covid/todos.ceara.hoje.csv',index=False)
     df_cariri.to_csv('/dados/flask/cimai/covid/todos.cariri.hoje.csv',index=False)
     return("SUCESSO")
+
+
+def salvarDadosGrafico(arquivo,tabela,labels,dados):
+    conn = sqlite3.connect(arquivo)
+    c = conn.cursor()
+    df = pd.DataFrame({"label": labels, "quantidade":dados})
+    df.to_sql(tabela,conn,if_exists='replace',index=False)
+    conn.close()
+
+def salvarDadosMapa(arquivo,tabela,cidade,confirmados,latitude,longitude,porCemMil):
+    #TODO: Adaptar para cidades e bairros
+    conn = sqlite3.connect(arquivo)
+    c = conn.cursor()
+    df = pd.DataFrame({"cidade": cidade, "confirmados":confirmados,"latitude": latitude,"longitude":longitude,"incidencia": porCemMil})
+    df.to_sql(tabela,conn,if_exists='replace',index=False)
+    conn.close()
+
+@app.route("/atualizarDados")
+def atualizarDados():
+    dados,evolucao,porCidade,evolucaoTotal,evolucaoDataSet,cidades_confirmadas,agrupamentos,bairros = dadosCovid()
+    ARQUIVO = COVID_DIR + 'dados.cariri.hoje.sqlite3'
+    salvarDadosGrafico(ARQUIVO,"confirmadosPorIdade",agrupamentos[6],agrupamentos[7])
+    salvarDadosGrafico(ARQUIVO,"confirmadosPorSexo",agrupamentos[3],agrupamentos[2])    
+    salvarDadosGrafico(ARQUIVO,"evolucao",evolucaoDataSet[0],evolucaoDataSet[1])    
+    porCemMil = ((cidades_confirmadas['confirmado']/cidades_confirmadas['populacao'])*100000).round(2)
+    salvarDadosMapa(ARQUIVO,"cidadesConfirmadas",cidades_confirmadas['cidade'].tolist(),cidades_confirmadas['confirmado'].tolist(),cidades_confirmadas['latitude'].tolist(),cidades_confirmadas['longitude'].tolist(),porCemMil.tolist())
+    return("SUCESSO")
+
+@app.route("/teste")
+def teste():
+    return("OK")
+
 if __name__ == "__main__":
     app.run()

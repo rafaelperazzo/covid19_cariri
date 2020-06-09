@@ -105,7 +105,7 @@ def dadosCovid():
     CASOS_DIR = '/dados/flask/cimai/covid/'
     casos_cariri = pd.read_csv(CASOS_DIR + 'covid.ceara.csv',delimiter=",",encoding='latin1',decimal='.')
     casos_cariri.fillna(0,inplace=True)
-    casos_cariri = casos_cariri[['codigoPaciente','bairroPaciente','municipioPaciente','sexoPaciente','idadePaciente','resultadoFinalExame']]
+    casos_cariri = casos_cariri[['codigoPaciente','bairroPaciente','municipioPaciente','sexoPaciente','idadePaciente','resultadoFinalExame','dataObito','obitoConfirmado']]
     cariri = ['ABAIARA', 'ALTANEIRA', 'ANTONINA DO NORTE', 'ARARIPE', 'ASSARE','AURORA','BARBALHA','BARRO', 'BREJO SANTO', 'CAMPOS SALES', 'CARIRIACU', 'CRATO', 'FARIAS BRITO', 'GRANJEIRO', 'JARDIM', 'JATI', 'JUAZEIRO DO NORTE', 'LAVRAS DA MANGABEIRA', 'MAURITI', 'MILAGRES', 'MISSAO VELHA', 'NOVA OLINDA', 'PENAFORTE', 'PORTEIRAS', 'POTENGI', 'SALITRE', 'SANTANA DO CARIRI', 'TARRAFAS', 'VARZEA ALEGRE']
     casos_cariri = casos_cariri[casos_cariri['municipioPaciente'].isin(cariri)]
     casos_cariri['resultadoFinalExame'].replace([0],['Em Análise'],inplace=True)
@@ -150,6 +150,8 @@ def dadosCovid():
             longitude = requisicao[0]['lon']
             gps = str(latitude) + ',' + str(longitude)
         linha.append(gps)
+        linha.append(latitude)
+        linha.append(longitude)
         bairros.append(linha)
 
     #POR SEXO E RESULTADO NEGATIVO
@@ -167,6 +169,10 @@ def dadosCovid():
     porSexo = casos_cariri[casos_cariri['resultadoFinalExame']=='Positivo'].groupby(['sexoPaciente'])
     listaSexos = porSexo['codigoPaciente'].count().tolist()
     listaSexosTotais = porSexo['codigoPaciente'].count().index.tolist()
+
+    porSexoObitos = casos_cariri[casos_cariri['obitoConfirmado']==1.0].groupby(['sexoPaciente'])
+    listaSexosTotaisObitos = porSexoObitos['codigoPaciente'].count().tolist()
+    
     #Total de exames realizados
     tipoResultado = ['Negativo','Positivo','Em Análise']
     totalExames = casos_cariri[casos_cariri['resultadoFinalExame'].isin(tipoResultado)].shape[0]
@@ -181,6 +187,12 @@ def dadosCovid():
     porIdadePositivo.index.name = 'Faixa Etária'
     porIdadePositivo.columns = ['Quantidade']
 
+    obitos_confirmados = casos_cariri[casos_cariri['obitoConfirmado']==1.0]
+    gruposObitosIdades = obitos_confirmados.groupby((pd.cut(obitos_confirmados['idadePaciente'],idades,right=False)))
+    porIdadeObitos = gruposObitosIdades['codigoPaciente'].count().to_frame()
+    porIdadeObitos.index.name = 'Faixa Etária'
+    porIdadeObitos.columns = ['Quantidade']
+
     casos_analise = casos_cariri[casos_cariri['resultadoFinalExame']=='Em Análise']
     gruposAnaliseIdades = casos_analise.groupby((pd.cut(casos_analise['idadePaciente'],idades)))
     porIdadeAnalise = gruposAnaliseIdades['codigoPaciente'].count().to_frame()
@@ -194,7 +206,7 @@ def dadosCovid():
     dadosPositivoIdade = porIdadePositivo['Quantidade'].tolist()
     dadosAnaliseIdade = porIdadeAnalise['Quantidade'].tolist()
 
-    agrupamentos =[tabelaPositivoPorSexo.to_html(),tabelaPositivoPorBairro.to_html(),listaSexos,listaSexosTotais,totalExames,totalNegativos,intervaloIdades,dadosPositivoIdade,dadosAnaliseIdade]
+    agrupamentos =[tabelaPositivoPorSexo.to_html(),tabelaPositivoPorBairro.to_html(),listaSexos,listaSexosTotais,totalExames,totalNegativos,intervaloIdades,dadosPositivoIdade,dadosAnaliseIdade,porIdadeObitos,listaSexosTotaisObitos]
 
     return(dia,evolucao,porCidade,evolucaoTotal,evolucaoDataset,cidades_confirmadas,agrupamentos,bairros)
 
@@ -251,11 +263,15 @@ def atualizaDatasets():
     return("SUCESSO")
 
 
-def salvarDadosGrafico(arquivo,tabela,labels,dados):
+def salvarDadosGrafico(arquivo,tabela,labels,dados,dados2=[]):
     conn = sqlite3.connect(arquivo)
     c = conn.cursor()
-    df = pd.DataFrame({"label": labels, "quantidade":dados})
-    df.to_sql(tabela,conn,if_exists='replace',index=False)
+    if (len(dados2)==0):
+        df = pd.DataFrame({"label": labels, "quantidade":dados})
+        df.to_sql(tabela,conn,if_exists='replace',index=False)
+    else:
+        df = pd.DataFrame({"label": labels, "quantidade":dados,"quantidade2": dados2})
+        df.to_sql(tabela,conn,if_exists='replace',index=False)
     conn.close()
 
 def salvarDadosMapa(arquivo,tabela,cidade,confirmados,latitude,longitude,porCemMil):
@@ -266,15 +282,28 @@ def salvarDadosMapa(arquivo,tabela,cidade,confirmados,latitude,longitude,porCemM
     df.to_sql(tabela,conn,if_exists='replace',index=False)
     conn.close()
 
+def salvarDadosMapaBairros(arquivo,tabela,cidade,bairros,latitude,longitude):
+    #TODO: Adaptar para cidades e bairros
+    conn = sqlite3.connect(arquivo)
+    c = conn.cursor()
+    df = pd.DataFrame({"cidade": cidade, "bairro":bairros,"latitude": latitude,"longitude":longitude})
+    df.to_sql(tabela,conn,if_exists='replace',index=False)
+    conn.close()
+
 @app.route("/atualizarDados")
 def atualizarDados():
     dados,evolucao,porCidade,evolucaoTotal,evolucaoDataSet,cidades_confirmadas,agrupamentos,bairros = dadosCovid()
     ARQUIVO = COVID_DIR + 'dados.cariri.hoje.sqlite3'
     salvarDadosGrafico(ARQUIVO,"confirmadosPorIdade",agrupamentos[6],agrupamentos[7])
     salvarDadosGrafico(ARQUIVO,"confirmadosPorSexo",agrupamentos[3],agrupamentos[2])    
-    salvarDadosGrafico(ARQUIVO,"evolucao",evolucaoDataSet[0],evolucaoDataSet[1])    
+    salvarDadosGrafico(ARQUIVO,"obitosPorIdade",agrupamentos[6],agrupamentos[9]['Quantidade'].tolist()) 
+    salvarDadosGrafico(ARQUIVO,"obitosPorSexo",agrupamentos[3],agrupamentos[10])
+    salvarDadosGrafico(ARQUIVO,"evolucao",evolucaoDataSet[0],evolucaoDataSet[1],evolucaoDataSet[3])
     porCemMil = ((cidades_confirmadas['confirmado']/cidades_confirmadas['populacao'])*100000).round(2)
     salvarDadosMapa(ARQUIVO,"cidadesConfirmadas",cidades_confirmadas['cidade'].tolist(),cidades_confirmadas['confirmado'].tolist(),cidades_confirmadas['latitude'].tolist(),cidades_confirmadas['longitude'].tolist(),porCemMil.tolist())
+    df_bairros = pd.DataFrame.from_records(bairros)
+    df_bairros.columns = ['cidade','bairro','gps','latitude','longitude']
+    salvarDadosMapaBairros(ARQUIVO,"bairros",df_bairros['cidade'].tolist(),df_bairros['bairro'].tolist(),df_bairros['latitude'].tolist(),df_bairros['longitude'].tolist())
     return("SUCESSO")
 
 @app.route("/teste")

@@ -129,6 +129,12 @@ def dadosCovid():
     bairros = []
     for i in range(0,len(tabelaPositivoPorBairro.index),1):
         linha = list(tabelaPositivoPorBairro.index[i])
+        confirmados_bairro = 1
+        try:
+            confirmados_bairro = tabelaPositivoPorBairro.loc[linha[0],linha[1]].tolist()[0]
+        except KeyError:
+            confirmados_bairro = 1
+
         if linha[1]=='NAO INFORMADO' or linha[1]=='ZONA RURAL':
             linha[1] = 'CENTRO'
 
@@ -152,6 +158,7 @@ def dadosCovid():
         linha.append(gps)
         linha.append(latitude)
         linha.append(longitude)
+        linha.append(confirmados_bairro)
         bairros.append(linha)
 
     #POR SEXO E RESULTADO NEGATIVO
@@ -282,12 +289,25 @@ def salvarDadosMapa(arquivo,tabela,cidade,confirmados,latitude,longitude,porCemM
     df.to_sql(tabela,conn,if_exists='replace',index=False)
     conn.close()
 
-def salvarDadosMapaBairros(arquivo,tabela,cidade,bairros,latitude,longitude):
+def salvarDadosMapaBairros(arquivo,tabela,cidade,bairros,latitude,longitude,confirmados):
     #TODO: Adaptar para cidades e bairros
     conn = sqlite3.connect(arquivo)
     c = conn.cursor()
-    df = pd.DataFrame({"cidade": cidade, "bairro":bairros,"latitude": latitude,"longitude":longitude})
+    df = pd.DataFrame({"cidade": cidade, "bairro":bairros,"latitude": latitude,"longitude":longitude,"confirmados": confirmados})
     df.to_sql(tabela,conn,if_exists='replace',index=False)
+    conn.close()
+
+def salvarDadosInternacoes(arquivo,tabela):
+    conn = sqlite3.connect(arquivo)
+    c = conn.cursor()
+    df_internacoes = pd.read_csv(COVID_DIR + 'TODOS.CEARA.HOJE.LEITOS.CSV',delimiter=",",encoding='latin1',decimal='.')
+    dados_internacoes = [df_internacoes['uti_ativos'].sum(),df_internacoes['uti_ocupacao'].sum(),df_internacoes['enfermaria_ativos'].sum(),df_internacoes['enfermaria_ocupacao'].sum()]
+    dados_percentuais = [df_internacoes['uti_ocupacao'].sum()/df_internacoes['uti_ativos'].sum(),df_internacoes['enfermaria_ocupacao'].sum()/df_internacoes['enfermaria_ativos'].sum()]
+    dados_percentuais = [round(num, 2) for num in dados_percentuais]
+    dados_percentuais = [int(num*100) for num in dados_percentuais]
+    df_ocupacao = pd.DataFrame([dados_percentuais],columns=['uti','enfermaria'],index=['percentuais'])
+    df_ocupacao.to_sql(tabela,conn,if_exists='replace',index=False)
+    df_internacoes.to_sql("internacoes",conn,if_exists='replace',index=False)
     conn.close()
 
 @app.route("/atualizarDados")
@@ -302,8 +322,9 @@ def atualizarDados():
     porCemMil = ((cidades_confirmadas['confirmado']/cidades_confirmadas['populacao'])*100000).round(2)
     salvarDadosMapa(ARQUIVO,"cidadesConfirmadas",cidades_confirmadas['cidade'].tolist(),cidades_confirmadas['confirmado'].tolist(),cidades_confirmadas['latitude'].tolist(),cidades_confirmadas['longitude'].tolist(),porCemMil.tolist())
     df_bairros = pd.DataFrame.from_records(bairros)
-    df_bairros.columns = ['cidade','bairro','gps','latitude','longitude']
-    salvarDadosMapaBairros(ARQUIVO,"bairros",df_bairros['cidade'].tolist(),df_bairros['bairro'].tolist(),df_bairros['latitude'].tolist(),df_bairros['longitude'].tolist())
+    df_bairros.columns = ['cidade','bairro','gps','latitude','longitude','confirmados']
+    salvarDadosMapaBairros(ARQUIVO,"bairros",df_bairros['cidade'].tolist(),df_bairros['bairro'].tolist(),df_bairros['latitude'].tolist(),df_bairros['longitude'].tolist(),df_bairros['confirmados'].tolist())
+    salvarDadosInternacoes(ARQUIVO,"dadosInternacoes")
     return("SUCESSO")
 
 @app.route("/teste")

@@ -42,6 +42,8 @@ import semantic_version
 import os
 import requests
 import sqlite3
+from bs4 import BeautifulSoup
+
 
 WORKING_DIR='/dados/flask/covid/'
 COVID_DIR = '/dados/flask/cimai/covid/'
@@ -105,6 +107,7 @@ def dadosCovid():
     CASOS_DIR = '/dados/flask/cimai/covid/'
     casos_cariri = pd.read_csv(CASOS_DIR + 'covid.ceara.csv',delimiter=",",encoding='latin1',decimal='.')
     casos_cariri.fillna(0,inplace=True)
+    #casos_cariri = casos_cariri[['codigoPaciente','bairroPaciente','municipioPaciente','sexoPaciente','idadePaciente','resultadoFinalExame','dataObito','obitoConfirmado']]
     casos_cariri = casos_cariri[['codigoPaciente','bairroPaciente','municipioPaciente','sexoPaciente','idadePaciente','resultadoFinalExame','dataObito','obitoConfirmado']]
     cariri = ['ABAIARA', 'ALTANEIRA', 'ANTONINA DO NORTE', 'ARARIPE', 'ASSARE','AURORA','BARBALHA','BARRO', 'BREJO SANTO', 'CAMPOS SALES', 'CARIRIACU', 'CRATO', 'FARIAS BRITO', 'GRANJEIRO', 'JARDIM', 'JATI', 'JUAZEIRO DO NORTE', 'LAVRAS DA MANGABEIRA', 'MAURITI', 'MILAGRES', 'MISSAO VELHA', 'NOVA OLINDA', 'PENAFORTE', 'PORTEIRAS', 'POTENGI', 'SALITRE', 'SANTANA DO CARIRI', 'TARRAFAS', 'VARZEA ALEGRE']
     casos_cariri = casos_cariri[casos_cariri['municipioPaciente'].isin(cariri)]
@@ -310,6 +313,29 @@ def salvarDadosInternacoes(arquivo,tabela):
     df_internacoes.to_sql("internacoes",conn,if_exists='replace',index=False)
     conn.close()
 
+def salvarDadosObitos(arquivo,tabela):
+    conn = sqlite3.connect(arquivo)
+    c = conn.cursor()
+
+    HTML_DIR = "/dados/www/html/covid_csv/spyder/"
+    soup = BeautifulSoup(open(HTML_DIR + "sec-ce-comorbidades-hoje.html","rb"),'lxml')
+
+    obitos_comorbidade = soup.find_all('text',attrs={'class':'value-text'})[5].get_text()
+    obitos_comorbidade = obitos_comorbidade.lstrip()
+    obitos_comorbidade = obitos_comorbidade.rstrip()
+
+    obitos_por_dia = soup.find_all('text',attrs={'class':'value-text'})[3].get_text()
+    obitos_por_dia = obitos_por_dia.lstrip()
+    obitos_por_dia = obitos_por_dia.rstrip()
+
+    mediana_idade = soup.find_all('text',attrs={'class':'value-text'})[7].get_text()
+    mediana_idade = mediana_idade.lstrip()
+    mediana_idade = mediana_idade.rstrip()
+
+    dados = [obitos_comorbidade,obitos_por_dia,mediana_idade]
+    df = pd.DataFrame([dados],columns=['comorbidades','porDia','mediana_idade'])
+    df.to_sql(tabela,conn,if_exists='replace',index=False)
+
 @app.route("/atualizarDados")
 def atualizarDados():
     dados,evolucao,porCidade,evolucaoTotal,evolucaoDataSet,cidades_confirmadas,agrupamentos,bairros = dadosCovid()
@@ -324,7 +350,8 @@ def atualizarDados():
     df_bairros = pd.DataFrame.from_records(bairros)
     df_bairros.columns = ['cidade','bairro','gps','latitude','longitude','confirmados']
     salvarDadosMapaBairros(ARQUIVO,"bairros",df_bairros['cidade'].tolist(),df_bairros['bairro'].tolist(),df_bairros['latitude'].tolist(),df_bairros['longitude'].tolist(),df_bairros['confirmados'].tolist())
-    salvarDadosInternacoes(ARQUIVO,"dadosInternacoes")
+    salvarDadosInternacoes(ARQUIVO,"internacoes")
+    salvarDadosObitos(ARQUIVO,"obitosResumo")
     return("SUCESSO")
 
 @app.route("/teste")

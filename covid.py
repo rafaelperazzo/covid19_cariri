@@ -309,7 +309,7 @@ def salvarDadosInternacoes(arquivo,tabela):
     dados_percentuais = [round(num, 2) for num in dados_percentuais]
     dados_percentuais = [int(num*100) for num in dados_percentuais]
     df_ocupacao = pd.DataFrame([dados_percentuais],columns=['uti','enfermaria'],index=['percentuais'])
-    df_ocupacao.to_sql(tabela,conn,if_exists='replace',index=False)
+    df_ocupacao.to_sql("dadosInternacoes",conn,if_exists='replace',index=False)
     df_internacoes.to_sql("internacoes",conn,if_exists='replace',index=False)
     conn.close()
 

@@ -90,7 +90,7 @@ def dadosCovid():
 
     evolucao = agrupados['confirmado','suspeitos','obitos'].sum()
     dia = agrupados['confirmado','suspeitos','obitos'].sum().tail(len(cariri)).sum(axis=0).tolist()
-    porCidade = agrupados['confirmado','suspeitos','obitos'].sum().tail(len(cariri))
+    porCidade = agrupados['confirmado','suspeitos','obitos','recuperados'].sum().tail(len(cariri))
     porCidade = pd.merge(porCidade,gps,on='cidade')
     agrupadosEvolucao = df_cariri.groupby(['data'])
     evolucaoTotal = agrupadosEvolucao['confirmado','suspeitos','obitos'].sum()
@@ -284,11 +284,11 @@ def salvarDadosGrafico(arquivo,tabela,labels,dados,dados2=[]):
         df.to_sql(tabela,conn,if_exists='replace',index=False)
     conn.close()
 
-def salvarDadosMapa(arquivo,tabela,cidade,confirmados,latitude,longitude,porCemMil):
+def salvarDadosMapa(arquivo,tabela,cidade,confirmados,latitude,longitude,porCemMil,recuperados,emRecuperacao,obitos):
     #TODO: Adaptar para cidades e bairros
     conn = sqlite3.connect(arquivo)
     c = conn.cursor()
-    df = pd.DataFrame({"cidade": cidade, "confirmados":confirmados,"latitude": latitude,"longitude":longitude,"incidencia": porCemMil})
+    df = pd.DataFrame({"cidade": cidade, "confirmados":confirmados,"latitude": latitude,"longitude":longitude,"incidencia": porCemMil,"recuperados": recuperados,"emRecuperacao": emRecuperacao,"obitos": obitos})
     df.to_sql(tabela,conn,if_exists='replace',index=False)
     conn.close()
 
@@ -346,13 +346,17 @@ def atualizarDados():
     salvarDadosGrafico(ARQUIVO,"obitosPorSexo",agrupamentos[3],agrupamentos[10])
     salvarDadosGrafico(ARQUIVO,"evolucao",evolucaoDataSet[0],evolucaoDataSet[1],evolucaoDataSet[3])
     porCemMil = ((cidades_confirmadas['confirmado']/cidades_confirmadas['populacao'])*100000).round(2)
-    salvarDadosMapa(ARQUIVO,"cidadesConfirmadas",cidades_confirmadas['cidade'].tolist(),cidades_confirmadas['confirmado'].tolist(),cidades_confirmadas['latitude'].tolist(),cidades_confirmadas['longitude'].tolist(),porCemMil.tolist())
+    conf = np.array(cidades_confirmadas['confirmado'].tolist())
+    ob = np.array(cidades_confirmadas['obitos'].tolist())
+    rec = np.array(cidades_confirmadas['recuperados'].tolist())
+    emRecuperacao = (conf-ob-rec).tolist()
+    salvarDadosMapa(ARQUIVO,"cidadesConfirmadas",cidades_confirmadas['cidade'].tolist(),cidades_confirmadas['confirmado'].tolist(),cidades_confirmadas['latitude'].tolist(),cidades_confirmadas['longitude'].tolist(),porCemMil.tolist(),rec.tolist(),emRecuperacao,ob.tolist())
     df_bairros = pd.DataFrame.from_records(bairros)
     df_bairros.columns = ['cidade','bairro','gps','latitude','longitude','confirmados']
     salvarDadosMapaBairros(ARQUIVO,"bairros",df_bairros['cidade'].tolist(),df_bairros['bairro'].tolist(),df_bairros['latitude'].tolist(),df_bairros['longitude'].tolist(),df_bairros['confirmados'].tolist())
     salvarDadosInternacoes(ARQUIVO,"internacoes")
     salvarDadosObitos(ARQUIVO,"obitosResumo")
-    return("SUCESSO")
+    return("SUCESSO\n")
 
 @app.route("/teste")
 def teste():

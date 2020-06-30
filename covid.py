@@ -222,7 +222,7 @@ def dadosCovid():
 
 @app.route("/", methods=['GET', 'POST'])
 def covid():
-    #return('Em manutencao... Volta em alguns minutos...')
+    return(render_template('index.html'))
     dados,evolucao,porCidade,evolucaoTotal,evolucaoDataSet,cidades_confirmadas,agrupamentos,bairros = dadosCovid()
     total_populacao = porCidade['populacao'].astype(int).sum()
     col_populacao = porCidade['populacao'].astype(int)

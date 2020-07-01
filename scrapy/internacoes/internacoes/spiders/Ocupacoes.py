@@ -8,7 +8,7 @@ class OcupacoesSpider(scrapy.Spider):
     start_urls = ['https://apps.yoko.pet/covid_csv/spyder/sec-ce-internacoes-hoje.html']
 
     def parse(self, response):
-        tabela = response.xpath('//*[@class="mat-table"]')[0]
+        tabela = response.xpath('//*[@class="mat-table cdk-table mat-sort"]')[0]
         linhas = tabela.xpath('//tr')
         for i in range(1,len(linhas),1):
             try:
